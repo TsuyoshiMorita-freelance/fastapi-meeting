@@ -3,6 +3,7 @@ import datetime
 import requests
 import json
 import pandas as pd
+from typing import List
 
 page = st.sidebar.selectbox('Choose your page', ['users', 'rooms', 'bookings'])
 title_temp ="""
@@ -125,29 +126,46 @@ elif page == 'bookings':
             'booking_name': f'{booking["booking_id"]} {to_username(booking["user_id"])} {to_room_name(booking["room_id"])} {to_datetime(booking["start_datetime"])}'
         }
 
-    st.multiselect(
-        "Some text", booking_id.keys(), format_func=lambda x: booking_id[x]['booking_name']
-    )        
 
-    st.json(booking_id)
+    if (df_bookings.empty == False):
+        ## 削除フォーム
+        with st.form(key='delete_booking'):
+            booking_ids: List[int] = st.multiselect(
+                "予約削除", booking_id.keys(), format_func=lambda x: booking_id[x]['booking_name']
+            )
+            submit_delete_button = st.form_submit_button(label="予約削除")
 
-    df_bookings['user_id'] = df_bookings['user_id'].map(to_username)
-    df_bookings['room_id'] = df_bookings['room_id'].map(to_room_name)
-    df_bookings['start_datetime'] = df_bookings['start_datetime'].map(to_datetime)
-    df_bookings['end_datetime'] = df_bookings['end_datetime'].map(to_datetime)
+        ## 削除処理
+        if submit_delete_button:
+            st.write(booking_ids)
+            data = {
+                'booking_ids': booking_ids,
+            }
+            url = 'http://127.0.0.1:8000/bookings'
+            res = requests.delete(url,data = json.dumps(data))
+            if res.status_code == 200:
+                st.success('指定した会議室の予約を削除致しました。')
+            else:
+                st.error('会議室の予約の削除に失敗致しました。')
 
-    df_bookings = df_bookings.rename(columns={
-        'user_id': '予約者名',
-        'room_id': '会議室名',
-        'booked_num': '予約人数',
-        'start_datetime': '開始時刻',
-        'end_datetime': '終了時刻',
-        'booking_id': '予約番号',
-    })
+        ## 予約一覧表示用処理
+        df_bookings['user_id'] = df_bookings['user_id'].map(to_username)
+        df_bookings['room_id'] = df_bookings['room_id'].map(to_room_name)
+        df_bookings['start_datetime'] = df_bookings['start_datetime'].map(to_datetime)
+        df_bookings['end_datetime'] = df_bookings['end_datetime'].map(to_datetime)
 
-    #df_bookings.columns = ['会議室名','定員', '会議室ID']
-    st.write('### 予約一覧')
-    st.table(df_bookings)
+        df_bookings = df_bookings.rename(columns={
+            'user_id': '予約者名',
+            'room_id': '会議室名',
+            'booked_num': '予約人数',
+            'start_datetime': '開始時刻',
+            'end_datetime': '終了時刻',
+            'booking_id': '予約番号',
+        })
+
+        #df_bookings.columns = ['会議室名','定員', '会議室ID']
+        st.write('### 予約一覧')
+        st.table(df_bookings)
 
     with st.form(key='booking'):
         username: str = st.selectbox('予約者名', users_name.keys())

@@ -47,3 +47,10 @@ def create_booking(db: Session, booking: schemas.Booking):
         return db_booking
     else:
         raise HTTPException(status_code=404, detail="Alreday booked")
+
+def delete_booking(db: Session, booking_ids: schemas.BookingDelete):
+    db_booking_delete = db.query(models.Booking).\
+        filter(models.Booking.booking_id.in_(booking_ids.booking_ids)).\
+        delete(synchronize_session='evaluate')
+    #db.query(models.Booking).delete(db_booking_delete)
+    db.commit()

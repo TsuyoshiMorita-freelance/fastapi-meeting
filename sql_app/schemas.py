@@ -1,4 +1,5 @@
 import datetime
+from typing import List
 from pydantic import BaseModel, Field
 
 class BookingCreate(BaseModel):
@@ -7,6 +8,9 @@ class BookingCreate(BaseModel):
     booked_num: int
     start_datetime: datetime.datetime
     end_datetime: datetime.datetime
+
+class BookingDelete(BaseModel):
+    booking_ids: List[int]
 
 class Booking(BookingCreate):
     booking_id: int
